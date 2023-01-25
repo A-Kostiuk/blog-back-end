@@ -7,15 +7,15 @@ import { authValidation, postCreateValidation } from './validations/index.js';
 import { userController, postController } from './controllers/index.js';
 import { checkAuth, handleValidationErrors } from './utils/index.js';
 
-
-
-const app = express();
 dotenv.config();
 const PORT = process.env.PORT;
+const mongoUri = process.env.MONGO_URI;
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(mongoUri)
   .then(() => console.log('DB ok'))
   .catch(err => console.log('DB error', err));
+
+const app = express();
 
 const storage = multer.diskStorage({
   destination: (_, __, cb) => {
