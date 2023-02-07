@@ -1,5 +1,19 @@
 import PostModel from '../models/post.js';
 
+export const getLastTags = async (req, res) => {
+  try {
+    const posts = await PostModel.find().limit(5).exec();
+
+    const tagsSet = new Set(posts.map((obj) => obj.tags).flat());
+    const lastTags = Array.from(tagsSet).slice(0, 5);
+
+    res.json(lastTags);
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: 'Failed to get tags' });
+  }
+};
+
 export const getAll = async (req, res) => {
   try {
     const posts = await PostModel.find().populate('author').exec();
@@ -31,7 +45,7 @@ export const getOne = async (req, res) => {
         if (!doc) return res.status(404).json({ message: 'Post not found' });
         res.json(doc);
       },
-    );
+    ).populate('author');
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: 'Failed to get post' });
@@ -42,20 +56,17 @@ export const remove = async (req, res) => {
   try {
     const postId = req.params.id;
 
-    PostModel.findOneAndRemove(
-      { _id: postId },
-      (e, doc) => {
-        if (e) {
-          console.log(e);
-          return res.status(500).json({ message: 'Failed to delete post' });
-        }
-        if (!doc) return res.status(404).json({ message: 'Post not found' });
+    PostModel.findOneAndRemove({ _id: postId }, (e, doc) => {
+      if (e) {
+        console.log(e);
+        return res.status(500).json({ message: 'Failed to delete post' });
+      }
+      if (!doc) return res.status(404).json({ message: 'Post not found' });
 
-        res.json({
-          success: true,
-        });
+      res.json({
+        success: true,
       });
-
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: 'Failed to delete post' });
@@ -83,15 +94,18 @@ export const create = async (req, res) => {
 export const update = async (req, res) => {
   try {
     const postId = req.params.id;
-    await PostModel.updateOne({
-      _id: postId,
-    }, {
-      title: req.body.title,
-      text: req.body.text,
-      imageUrl: req.body.imageUrl,
-      author: req.userId,
-      tags: req.body.tags,
-    });
+    await PostModel.updateOne(
+      {
+        _id: postId,
+      },
+      {
+        title: req.body.title,
+        text: req.body.text,
+        imageUrl: req.body.imageUrl,
+        author: req.userId,
+        tags: req.body.tags,
+      },
+    );
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ message: 'Failed to update post' });
